@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>···</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#c8c8d4;min-height:100%}
+  body{padding-bottom:80px}
+
+  .progress-bar-wrap{position:fixed;top:0;left:0;right:0;height:4px;background:#0a0a10;z-index:100}
+  .progress-bar{height:100%;background:linear-gradient(90deg,#3a8a52,#7dffb0);width:0%;transition:width .4s;box-shadow:0 0 10px rgba(125,255,176,.5)}
+  .progress-label{position:fixed;top:14px;left:16px;font-family:ui-monospace,monospace;font-size:11px;color:#3e3e52;letter-spacing:2px;z-index:100;user-select:none;background:#0a0a0fcc;padding:4px 8px;border-radius:6px;backdrop-filter:blur(4px)}
+  .progress-label span{color:#7dffb0}
+  .skip-btn{position:fixed;top:14px;right:16px;background:#0a0a10cc;border:1px solid #2a2a3e;color:#5a5a72;font-family:ui-monospace,monospace;font-size:10px;letter-spacing:1px;padding:6px 12px;border-radius:6px;cursor:pointer;z-index:100;transition:color .2s,border-color .2s;backdrop-filter:blur(4px)}
+  .skip-btn:hover{color:#7dffb0;border-color:#3a5a4a}
+
+  .content{max-width:720px;margin:0 auto;padding:70px 20px 40px}
+
+  .card{background:#12121a;border-radius:20px;padding:48px 40px;box-shadow:0 0 0 1px #1e1e2e,0 40px 80px -20px rgba(0,0,0,.9);text-align:center;margin-bottom:24px}
+  .num{font-size:11px;letter-spacing:4px;color:#3e3e52;font-weight:700;margin-bottom:20px}
+  .title{font-size:30px;font-weight:800;color:#e8e8f0;line-height:1.2;letter-spacing:-.5px;margin-bottom:18px}
+  .text{font-size:16px;line-height:1.7;color:#8a8aa2;margin-bottom:28px}
+  .text strong{color:#c8c8d4}
+  .text code,.hint-box code{background:#0a0a10;padding:2px 8px;border-radius:6px;color:#7dffb0;font-family:ui-monospace,monospace;font-size:13px}
+
+  .hint-box{background:#0a0a10;border:1px solid #1e1e2e;border-radius:12px;padding:16px 20px;margin:16px 0;text-align:left;font-size:13px;line-height:1.6;color:#6a6a82}
+  .hint-box strong{color:#7dffb0;display:block;margin-bottom:10px;font-size:11px;letter-spacing:2px}
+  .hint-box .step{display:block;margin:6px 0;color:#8a8aa2;padding:4px 0;border-bottom:1px dashed #1a1a24}
+  .hint-box .step:last-child{border-bottom:none}
+  .hint-box .step.done{color:#3e3e52;text-decoration:line-through}
+  .hint-box .step .check{color:#2a2a3e;display:inline-block;width:18px}
+  .hint-box .step.done .check{color:#7dffb0}
+
+  .secret-found-badge{display:inline-block;background:#0a0a10;border:1px solid #2a2a3e;border-radius:6px;padding:3px 9px;font-size:10px;color:#7dffb0;letter-spacing:1px;margin:3px;font-family:ui-monospace,monospace}
+
+  .input-row{display:flex;gap:10px;max-width:100%;margin:0 auto 8px}
+  .input-row input{flex:1;background:#0a0a10;border:1px solid #2a2a3e;border-radius:12px;padding:16px 18px;font-size:16px;color:#e8e8f0;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s;letter-spacing:1px;min-width:0}
+  .input-row input:focus{border-color:#4a4a6e;box-shadow:0 0 0 3px rgba(125,255,176,.08)}
+  .input-row input::placeholder{color:#3a3a52}
+  .input-row button{background:linear-gradient(180deg,#252536,#1a1a28);border:none;border-radius:12px;padding:0 24px;color:#e8e8f0;font-size:14px;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 0 0 1px #32324a,0 4px 0 #0c0c14;transition:transform .08s,box-shadow .08s;font-family:inherit;text-transform:uppercase;flex-shrink:0}
+  .input-row button:active{transform:translateY(3px);box-shadow:0 0 0 1px #32324a,0 1px 0 #0c0c14}
+  .err{font-size:13px;color:#ff5c7a;min-height:18px;letter-spacing:.5px;margin-top:4px}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#12121a;color:#7dffb0;padding:12px 24px;border-radius:10px;font-size:13px;letter-spacing:1px;box-shadow:0 0 0 1px #2a2a3e,0 10px 30px rgba(0,0,0,.6);z-index:999;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;font-weight:600;max-width:80vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .footer-secret{text-align:center;padding:60px 20px 40px;font-size:15px;color:#2a2a3e;letter-spacing:1px;cursor:pointer;transition:color .3s,transform .2s;user-select:none}
+  .footer-secret:hover{color:#7dffb0;transform:scale(1.05)}
+  .footer-secret.found{color:#7dffb0;cursor:default}
+
+  .corner-mark{position:fixed;bottom:14px;right:16px;font-family:ui-monospace,monospace;font-size:10px;color:#1e1e2a;letter-spacing:2px;user-select:none;cursor:pointer;z-index:50;transition:color .2s;padding:6px 10px;border-radius:6px}
+  .corner-mark:hover{color:#3a3a4e}
+  .corner-mark.found{color:#7dffb0}
+
+  .center-dot{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;color:#1e1e2a;opacity:.25;pointer-events:auto;cursor:pointer;z-index:60;width:40px;height:40px;text-align:center;line-height:40px;transition:opacity .3s,color .3s;user-select:none;border-radius:50%}
+  .center-dot:hover{opacity:.7;color:#3a3a4e}
+  .center-dot.found{opacity:1;color:#7dffb0}
+
+  .final-card{background:#f4ecd8;color:#2a2218;border-radius:4px;padding:60px 40px;max-width:480px;box-shadow:0 0 0 1px #d8ccb0,0 30px 60px -20px rgba(0,0,0,.9);transform:rotate(-1deg);position:relative;text-align:center;margin:0 auto}
+  .final-card::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(-3deg);width:80px;height:18px;background:rgba(200,180,140,.7);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .final-card .num{color:#a89a7a;letter-spacing:5px}
+  .final-card .title{color:#1a1408;font-family:'Courier New',monospace;font-size:34px;letter-spacing:1px;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  .final-card .text{color:#5a4e38;font-family:'Courier New',monospace;font-size:15px;line-height:1.8}
+  .stamp{display:inline-block;margin-top:24px;border:2px solid #c84a4a;color:#c84a4a;font-family:ui-monospace,monospace;font-weight:800;letter-spacing:2px;padding:6px 14px;transform:rotate(-4deg);border-radius:4px;font-size:12px;opacity:.75}
+
+  .fade-in{animation:fi .5s ease both}
+  @keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+  @media (max-width:520px){
+    .card{padding:32px 22px}
+    .title{font-size:24px}
+    .text{font-size:14px}
+    .final-card{padding:44px 26px}
+    .final-card .title{font-size:26px}
+    .progress-label{font-size:10px;top:10px;left:10px}
+    .skip-btn{top:10px;right:10px;font-size:9px;padding:5px 9px}
+    .content{padding:60px 14px 40px}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar-wrap"><div class="progress-bar" id="progBar"></div></div>
+<div class="progress-label">СЕКРЕТОВ: <span id="progCount">0</span> / 20</div>
+<button class="skip-btn" id="skipBtn">ФИНАЛ →</button>
+
+<div class="content" id="content"></div>
+
+<div class="footer-secret" id="footerSecret">
+  <span id="footerText">··· (здесь что-то есть) ···</span>
+</div>
+
+<div class="corner-mark" id="cornerMark">v4</div>
+<div class="center-dot" id="centerDot">·</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const content = document.getElementById('content');
+  const progBar = document.getElementById('progBar');
+  const progCount = document.getElementById('progCount');
+  const skipBtn = document.getElementById('skipBtn');
+  const footerSecret = document.getElementById('footerSecret');
+  const footerText = document.getElementById('footerText');
+  const cornerMark = document.getElementById('cornerMark');
+  const centerDot = document.getElementById('centerDot');
+
+  const TOTAL = 20;
+  let found = new Set();
+
+  // ---------- ПОДСКАЗКИ (все секреты, всегда видны) ----------
+  const HINTS = [
+    {id:'s1',  hint:'Кликни по точке <code>.</code> в конце текста'},
+    {id:'s2',  hint:'Кликни по маленькой <code>·</code> рядом с заголовком'},
+    {id:'s3',  hint:'Кликни по мигающей <code>·</code> в блоке подсказки'},
+    {id:'s4',  hint:'Дважды кликни по слову <code>сайт</code> в заголовке'},
+    {id:'s5',  hint:'Кликни по счётчику <code>СЕКРЕТОВ: 0 / 20</code> слева вверху'},
+    {id:'s6',  hint:'Кликни по надписи <code>v4</code> в правом нижнем углу'},
+    {id:'s7',  hint:'Долистай в самый низ страницы и нажми на текст <code>Ты меня нашёл!</code>'},
+    {id:'s8',  hint:'Переключись на другую вкладку и вернись на эту'},
+    {id:'s9',  hint:'Измени размер окна браузера'},
+    {id:'s10', hint:'Выдели любой текст мышкой'},
+    {id:'s11', hint:'Кликни по <code>v4</code> ещё раз (после 5 находок)'},
+    {id:'s12', hint:'Правый клик по карточке'},
+    {id:'s13', hint:'Кликни по надписи <code>Ctrl+U</code> справа внизу'},
+    {id:'s14', hint:'Нажми на клавиатуре <code>↑ ↑ ↓ ↓</code>'},
+    {id:'s15', hint:'Найди точку <code>·</code> в самом центре экрана и кликни'},
+    {id:'s16', hint:'Прокрути страницу вниз, а потом до самого верха'},
+    {id:'s17', hint:'Кликни 10 раз по полосе прогресса сверху'},
+    {id:'s18', hint:'Кликни по <code>СЕКРЕТОВ: 0 / 20</code> ещё раз (после 10 находок)'},
+    {id:'s19', hint:'Найди в исходнике слово <code>КОД</code> (Ctrl+U)'},
+    {id:'s20', hint:'Найди <code>MASTER_KEY</code> в исходнике и введи в поле пароля'}
+  ];
+
+  function updateProgress(){
+    const n = found.size;
+    progCount.textContent = n;
+    progBar.style.width = (n / TOTAL * 100) + '%';
+    if (n >= TOTAL){
+      skipBtn.textContent = 'ФИНАЛ →';
+      skipBtn.style.color = '#7dffb0';
+      skipBtn.style.borderColor = '#3a5a4a';
+    }
+  }
+
+  function toast(msg){
+    let t = document.querySelector('.toast');
+    if (!t){
+      t = document.createElement('div');
+      t.className = 'toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  function addFound(id, msg){
+    if (found.has(id)) return false;
+    found.add(id);
+    updateProgress();
+    toast(msg || ('Секрет найден! ' + found.size + ' / ' + TOTAL));
+    renderMain();
+    return true;
+  }
+
+  // ---------- ОСНОВНОЙ РЕНДЕР ----------
+  function renderMain(){
+    const n = found.size;
+
+    let html = `
+      <div class="card fade-in">
+        <div class="num">СЕКРЕТОВ НАЙДЕНО: ${n} / ${TOTAL}</div>
+        <div class="title">Это не игра.<br>Это сайт.<span id="s2-slot"></span></div>
+        <div class="text">
+          Здесь спрятано <strong>20</strong> секретов.<br>
+          Каждый — это маленькая зацепка.<br>
+          Найди все — и получишь то, ради чего ты это делал.<br><br>
+          <span style="color:#3e3e52;font-size:13px">Все подсказки — ниже. Начни с первой.</span><span id="s1-slot"></span>
+        </div>
+    `;
+
+    // Блок подсказок — ВСЕГДА виден полностью
+    html += '<div class="hint-box"><strong>Что искать (все 20):</strong>';
+    for (let i = 0; i < HINTS.length; i++){
+      const h = HINTS[i];
+      const done = found.has(h.id);
+      html += `<span class="step ${done?'done':''}"><span class="check">${done?'✓':'○'}</span> ${h.hint}</span>`;
+    }
+    html += '</div>';
+
+    // Бейджи найденных
+    if (n > 0){
+      html += '<div style="margin:16px 0 0;line-height:2">';
+      for (const id of found){
+        const h = HINTS.find(x=>x.id===id);
+        if (h){
+          const short = h.hint.replace(/<[^>]+>/g,'').slice(0,40);
+          html += `<span class="secret-found-badge">✓ ${short}</span>`;
+        }
+      }
+      html += '</div>';
+    }
+
+    // Форма пароля
+    if (!found.has('s20')){
+      html += `
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid #1e1e2e">
+          <div style="font-size:11px;letter-spacing:3px;color:#3e3e52;margin-bottom:10px">ФИНАЛЬНЫЙ ПАРОЛЬ</div>
+          <div class="input-row">
+            <input id="s20-input" type="text" placeholder="введи пароль..." autocomplete="off" spellcheck="false">
+            <button id="s20-btn">→</button>
+          </div>
+          <div class="err" id="s20-err"></div>
+          <div style="font-size:11px;color:#3e3e52;margin-top:8px;text-align:left">Пароль спрятан в исходнике страницы (Ctrl+U). Ищи <code style="color:#7dffb0">MASTER_KEY</code>.</div>
+        </div>
+      `;
+    }
+
+    html += `<div class="hint" style="margin-top:16px;font-size:12px;color:#3e3e52">Найдено ${n} из ${TOTAL}. ${n >= TOTAL ? 'Все секреты найдены!' : 'Продолжай искать.'}<span id="s3-slot"></span></div>`;
+    html += '</div>';
+
+    content.innerHTML = html;
+
+    mountSecrets();
+    updateProgress();
+
+    // s20 форма
+    const inp = document.getElementById('s20-input');
+    const btn = document.getElementById('s20-btn');
+    const err = document.getElementById('s20-err');
+    if (inp && btn){
+      const submit = ()=>{
+        const v = (inp.value||'').trim().toLowerCase();
+        if (!v) return;
+        if (v === MASTER_KEY.toLowerCase() || v === 'эй тин фембой' || v === 'эйтин фембой' || v === 'eithin femboy'){
+          inp.disabled = true;
+          btn.disabled = true;
+          addFound('s20', 'ПАРОЛЬ ВЕРНЫЙ! Финал...');
+          setTimeout(showFinal, 800);
+        } else {
+          err.textContent = 'Не то. Пароль спрятан в коде сайта. Открой Ctrl+U и найди MASTER_KEY.';
+          inp.select();
+        }
+      };
+      btn.addEventListener('click', submit);
+      inp.addEventListener('keydown', e=>{ if (e.key === 'Enter') submit(); });
+    }
+  }
+
+  // ---------- МОНТИРОВАНИЕ СЕКРЕТОВ ----------
+  function mountSecrets(){
+    // s1
+    if (!found.has('s1')){
+      const slot = document.getElementById('s1-slot');
+      if (slot){
+        const span = document.createElement('span');
+        span.textContent = '.';
+        span.style.cssText = 'color:#3e3e52;cursor:pointer;display:inline-block;margin-left:2px;font-size:1.2em;transition:color .3s;pointer-events:auto';
+        span.title = 'Кликни меня';
+        span.addEventListener('click', ()=>{
+          span.style.color = '#7dffb0';
+          addFound('s1', '✓ Точка в тексте!');
+        });
+        slot.appendChild(span);
+      }
+    }
+
+    // s2
+    if (!found.has('s2')){
+      const slot = document.getElementById('s2-slot');
+      if (slot){
+        const span = document.createElement('span');
+        span.textContent = '·';
+        span.style.cssText = 'color:#1e1e2a;cursor:pointer;display:inline-block;margin-left:6px;font-size:.5em;vertical-align:super;transition:color .3s;pointer-events:auto';
+        span.title = 'Кликни меня';
+        span.addEventListener('click', ()=>{
+          span.style.color = '#7dffb0';
+          addFound('s2', '✓ Точка в заголовке!');
+        });
+        slot.appendChild(span);
+      }
+    }
+
+    // s3
+    if (found.has('s1') && found.has('s2') && !found.has('s3')){
+      const slot = document.getElementById('s3-slot');
+      if (slot){
+        const span = document.createElement('span');
+        span.textContent = ' · ';
+        span.style.cssText = 'color:#2a2a3e;cursor:pointer;display:inline-block;margin:0 4px;font-size:1.4em;animation:blink 1.5s infinite;pointer-events:auto;transition:color .3s';
+        span.title = 'Кликни меня';
+        span.addEventListener('click', ()=>{
+          span.style.color = '#7dffb0';
+          addFound('s3', '✓ Мигающая точка!');
+        });
+        slot.appendChild(span);
+      }
+    }
+
+    // s4
+    if (!found.has('s4')){
+      const titleEl = document.querySelector('.title');
+      if (titleEl){
+        const html = titleEl.innerHTML;
+        if (!html.includes('s4-word')){
+          titleEl.innerHTML = html.replace('сайт', '<span id="s4-word" style="cursor:pointer;transition:color .3s">сайт</span>');
+        }
+        const word = document.getElementById('s4-word');
+        if (word){
+          word.addEventListener('dblclick', ()=>{
+            word.style.color = '#7dffb0';
+            addFound('s4', '✓ Двойной клик по "сайт"!');
+          });
+        }
+      }
+    }
+
+    // s5
+    if (!found.has('s5')){
+      const el = document.querySelector('.progress-label');
+      if (el){
+        el.style.cursor = 'pointer';
+        el.style.pointerEvents = 'auto';
+        el.title = 'Кликни меня';
+        el.onclick = ()=>{
+          if (!found.has('s5')){
+            el.style.color = '#7dffb0';
+            addFound('s5', '✓ Счётчик кликнут!');
+          }
+        };
+      }
+    }
+
+    // s6
+    if (!found.has('s6')){
+      cornerMark.style.cursor = 'pointer';
+      cornerMark.style.pointerEvents = 'auto';
+      cornerMark.title = 'Кликни меня';
+      cornerMark.onclick = ()=>{
+        if (!found.has('s6')){
+          cornerMark.style.color = '#7dffb0';
+          addFound('s6', '✓ Уголок кликнут!');
+        }
+      };
+    }
+
+    // s7
+    if (!found.has('s7')){
+      footerText.textContent = 'Ты меня нашёл!';
+      footerSecret.classList.remove('found');
+      footerSecret.style.cursor = 'pointer';
+      footerSecret.onclick = ()=>{
+        if (!found.has('s7')){
+          footerSecret.classList.add('found');
+          footerText.textContent = '✓ Секрет 7 найден!';
+          addFound('s7', '✓ Долистал до конца!');
+        }
+      };
+    } else {
+      footerSecret.classList.add('found');
+      footerText.textContent = '✓ (секрет 7 уже найден)';
+      footerSecret.onclick = null;
+      footerSecret.style.cursor = 'default';
+    }
+
+    // s8
+    if (!found.has('s8') && !window._tabMounted){
+      window._tabMounted = true;
+      const titles = ['·', '··', '···', 'нажми на вкладку', 'не уходи', '···'];
+      let i = 0;
+      const iv = setInterval(()=>{
+        if (found.has('s8')) { clearInterval(iv); document.title = '···'; return; }
+        document.title = titles[i % titles.length];
+        i++;
+      }, 4000);
+      document.addEventListener('visibilitychange', function onVis(){
+        if (!document.hidden && !found.has('s8')){
+          addFound('s8', '✓ Вкладка!');
+          clearInterval(iv);
+          document.title = '···';
+          document.removeEventListener('visibilitychange', onVis);
+        }
+      });
+    }
+
+    // s9
+    if (!found.has('s9') && !window._resizeMounted){
+      window._resizeMounted = true;
+      window.addEventListener('resize', ()=>{
+        if (!found.has('s9')) addFound('s9', '✓ Размер окна!');
+      });
+    }
+
+    // s10
+    if (!found.has('s10') && !window._selMounted){
+      window._selMounted = true;
+      document.addEventListener('mouseup', ()=>{
+        if (!found.has('s10') && window.getSelection().toString().length > 0){
+          addFound('s10', '✓ Выделение!');
+        }
+      });
+    }
+
+    // s11
+    if (found.size >= 5 && !found.has('s11')){
+      cornerMark.textContent = 'v4 · нажми';
+      cornerMark.style.color = '#2a2a3e';
+      cornerMark.style.cursor = 'pointer';
+      cornerMark.style.pointerEvents = 'auto';
+      cornerMark.title = 'Кликни меня ещё раз';
+      cornerMark.onclick = ()=>{
+        if (!found.has('s11')) addFound('s11', '✓ Версия!');
+      };
+    }
+
+    // s12
+    if (!found.has('s12') && !window._ctxMounted){
+      window._ctxMounted = true;
+      content.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        if (!found.has('s12')) addFound('s12', '✓ Правый клик!');
+      });
+    }
+
+    // s13
+    if (!found.has('s13')){
+      const sh = document.getElementById('sourceHint');
+      if (sh){
+        sh.style.color = '#14141e';
+        sh.style.cursor = 'pointer';
+        sh.style.pointerEvents = 'auto';
+        sh.title = 'Кликни меня';
+        sh.onclick = ()=>{
+          sh.style.color = '#7dffb0';
+          addFound('s13', '✓ Исходник!');
+        };
+      }
+    }
+
+    // s14
+    if (!found.has('s14') && !window._seqMounted){
+      window._seqMounted = true;
+      const seq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown'];
+      let idx = 0;
+      window.addEventListener('keydown', (e)=>{
+        if (e.key === seq[idx]){
+          idx++;
+          if (idx === seq.length){
+            if (!found.has('s14')) addFound('s14', '✓ ↑ ↑ ↓ ↓!');
+            idx = 0;
+          }
+        } else {
+          idx = 0;
+        }
+      });
+    }
+
+    // s15
+    if (!found.has('s15')){
+      centerDot.classList.remove('found');
+      centerDot.style.cursor = 'pointer';
+      centerDot.style.pointerEvents = 'auto';
+      centerDot.title = 'Кликни меня';
+      centerDot.onclick = ()=>{
+        centerDot.classList.add('found');
+        addFound('s15', '✓ Невидимка!');
+      };
+    } else {
+      centerDot.classList.add('found');
+      centerDot.onclick = null;
+    }
+
+    // s16
+    if (!found.has('s16') && !window._scrollMounted){
+      window._scrollMounted = true;
+      let scrolledDown = false;
+      window.addEventListener('scroll', ()=>{
+        if (window.scrollY > 200) scrolledDown = true;
+        if (scrolledDown && window.scrollY < 5 && !found.has('s16')){
+          addFound('s16', '✓ Прокрутил до верха!');
+        }
+      });
+    }
+
+    // s17
+    if (!found.has('s17') && !window._progClickMounted){
+      window._progClickMounted = true;
+      let count = 0;
+      const bar = document.getElementById('progBar');
+      if (bar){
+        bar.parentElement.style.cursor = 'pointer';
+        bar.parentElement.onclick = ()=>{
+          count++;
+          if (count >= 10 && !found.has('s17')){
+            addFound('s17', '✓ 10 кликов!');
+          }
+        };
+      }
+    }
+
+    // s18 — счётчик ещё раз (после 10 находок)
+    if (found.size >= 10 && !found.has('s18')){
+      const el = document.querySelector('.progress-label');
+      if (el){
+        el.style.cursor = 'pointer';
+        el.style.pointerEvents = 'auto';
+        el.title = 'Кликни меня ещё раз';
+        el.onclick = ()=>{
+          if (!found.has('s18')){
+            el.style.color = '#7dffb0';
+            addFound('s18', '✓ Счётчик ещё раз!');
+          }
+        };
+      }
+    }
+
+    // s19 — КОД в исходнике (без консоли, просто ищем в коде)
+    if (!found.has('s19')){
+      // создаём невидимый маркер, который виден только в исходнике
+      let el = document.getElementById('code-marker');
+      if (!el){
+        el = document.createElement('div');
+        el.id = 'code-marker';
+        el.textContent = 'КОД';
+        el.style.cssText = 'position:fixed;bottom:8px;left:8px;font-family:ui-monospace,monospace;font-size:10px;color:#0a0a0f;opacity:.15;z-index:50;cursor:pointer;pointer-events:auto;letter-spacing:1px;transition:color .2s,opacity .2s';
+        el.title = 'Найди меня в исходнике';
+        el.addEventListener('click', ()=>{
+          if (!found.has('s19')){
+            el.style.color = '#7dffb0';
+            el.style.opacity = '1';
+            addFound('s19', '✓ КОД найден!');
+          }
+        });
+        document.body.appendChild(el);
+      }
+    } else {
+      const el = document.getElementById('code-marker');
+      if (el) el.style.display = 'none';
+    }
+  }
+
+  // ---------- ФИНАЛ ----------
+  function showFinal(){
+    document.getElementById('progBar').style.width = '100%';
+    progCount.textContent = '20';
+    skipBtn.style.display = 'none';
+    footerSecret.style.display = 'none';
+    cornerMark.style.display = 'none';
+    centerDot.style.display = 'none';
+    const sh = document.getElementById('sourceHint');
+    if (sh) sh.style.display = 'none';
+    const cm = document.getElementById('code-marker');
+    if (cm) cm.style.display = 'none';
+    content.innerHTML = `
+      <div class="final-card fade-in">
+        <div class="num">ФИНАЛ</div>
+        <div class="title">Эйтин<br>фембой</div>
+        <div class="text" style="margin-top:20px">
+          Ты нашёл все двадцать.<br>
+          Ты искал это с самого начала.<br><br>
+          <span style="opacity:.6;font-size:12px">— конец —</span>
+        </div>
+        <div class="stamp">20 / 20</div>
+      </div>
+    `;
+    document.title = 'Эйтин фембой';
+  }
+
+  skipBtn.addEventListener('click', ()=>{
+    if (found.size >= TOTAL){
+      showFinal();
+    } else {
+      toast('Найди все 20 секретов или введи пароль вручную.');
+    }
+  });
+
+  renderMain();
+
+  // ============================================================
+  //  МАСТЕР-ПАРОЛЬ
+  //  ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+  //
+  //       MASTER_KEY = 'эй тин фембой'
+  //
+  //  ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+  //
+  //  Пароль виден только здесь, в исходнике.
+  //  Открой Ctrl+U и найди MASTER_KEY.
+  //
+  //  Слово КОД (секрет 19) — тоже ищется в исходнике.
+  //  Просто найди его глазами. Игра засчитывает только клик по
+  //  невидимому маркеру в левом нижнем углу.
+  //
+  // ============================================================
+
+  const MASTER_KEY = 'эй тин фембой';
+
+})();
+</script>
+</body>
+</html>
